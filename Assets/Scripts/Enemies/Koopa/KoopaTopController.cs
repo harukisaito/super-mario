@@ -51,7 +51,7 @@ public class KoopaTopController : MonoBehaviour {
 			colliderTop.enabled = false;
 			spriteRenderer.enabled = false;
 			koopa.constraints = RigidbodyConstraints2D.FreezeAll;
-			GameController.instance.Score += 100;
+			GameController.instance.Score.currentScore += 100;
 
 			// Instantiate shell 
 			koopaShell = Instantiate(koopaShellPrefab, transform.position, Quaternion.identity, transform.parent);

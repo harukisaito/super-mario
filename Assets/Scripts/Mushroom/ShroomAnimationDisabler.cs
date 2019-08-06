@@ -14,6 +14,9 @@ public class ShroomAnimationDisabler : MonoBehaviour
 	public void DisableAnimator()
 	{
 		GetComponent<Animator>().enabled = false;
-		shroomController.AddForce(shroomController.facingRight, shroomController.speed);
+		if(gameObject.tag == "Mushroom")
+		{
+			shroomController.AddForce(shroomController.facingRight, shroomController.speed);
+		}
 	}
 }

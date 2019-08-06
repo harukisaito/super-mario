@@ -46,7 +46,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\AudioManager.cs" />
+     <Compile Include="Assets\Scripts\Audio\AudioManager.cs" />
+     <Compile Include="Assets\Scripts\Audio\Sound.cs" />
+     <Compile Include="Assets\Scripts\Blocks\BrickBlock\BrickBlockColliderDisabler.cs" />
      <Compile Include="Assets\Scripts\Blocks\BrickBlock\BrickBlockController.cs" />
      <Compile Include="Assets\Scripts\Blocks\BrickBlock\BrickBlockParentSpawner.cs" />
      <Compile Include="Assets\Scripts\Blocks\BrickBlock\BrickBlockSpawner.cs" />
@@ -56,8 +58,14 @@
      <Compile Include="Assets\Scripts\Blocks\MysteryBlock\MysteryBlockController.cs" />
      <Compile Include="Assets\Scripts\Blocks\MysteryBlock\MysteryBlockParentSpawner.cs" />
      <Compile Include="Assets\Scripts\Blocks\MysteryBlock\MysteryBlockSpawner.cs" />
-     <Compile Include="Assets\Scripts\BrickBlockColliderDisabler.cs" />
+     <Compile Include="Assets\Scripts\Blocks\OneUpBlock\OneUpBlockColliderController.cs" />
+     <Compile Include="Assets\Scripts\Blocks\OneUpBlock\OneupBlockController.cs" />
+     <Compile Include="Assets\Scripts\Blocks\StarBlock\StarBlockController.cs" />
+     <Compile Include="Assets\Scripts\Blocks\StarBlock\StarBlockParentSpawner.cs" />
+     <Compile Include="Assets\Scripts\Blocks\StarBlock\StarBlockSpawner.cs" />
+     <Compile Include="Assets\Scripts\Blocks\StarBlock\StarController.cs" />
      <Compile Include="Assets\Scripts\Camera\CameraController.cs" />
+     <Compile Include="Assets\Scripts\Enemies\Goomba\GoombaColliderDisabler.cs" />
      <Compile Include="Assets\Scripts\Enemies\Goomba\GoombaController.cs" />
      <Compile Include="Assets\Scripts\Enemies\Goomba\GoombaSideController.cs" />
      <Compile Include="Assets\Scripts\Enemies\Goomba\GoombaSpawner.cs" />
@@ -78,16 +86,11 @@
      <Compile Include="Assets\Scripts\GoalFlagController.cs" />
      <Compile Include="Assets\Scripts\Mushroom\MushroomController.cs" />
      <Compile Include="Assets\Scripts\Mushroom\ShroomAnimationDisabler.cs" />
-     <Compile Include="Assets\Scripts\OneUpBlockColliderController.cs" />
-     <Compile Include="Assets\Scripts\OneupBlockController.cs" />
+     <Compile Include="Assets\Scripts\Player\MarioSpawner.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerAnimationEvents.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerCollisionController.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerController.cs" />
-     <Compile Include="Assets\Scripts\Sound.cs" />
-     <Compile Include="Assets\Scripts\StarBlockController.cs" />
-     <Compile Include="Assets\Scripts\StarBlockParentSpawner.cs" />
-     <Compile Include="Assets\Scripts\StarBlockSpawner.cs" />
-     <Compile Include="Assets\Scripts\StarController.cs" />
+     <Compile Include="Assets\Scripts\Score.cs" />
      <Compile Include="Assets\Scripts\World Objects\CoinSpawner.cs" />
      <Compile Include="Assets\Scripts\World Objects\FlagController.cs" />
      <Compile Include="Assets\Scripts\World Objects\HoleController.cs" />

@@ -9,27 +9,6 @@ public class PlayerCollisionController : MonoBehaviour {
 	[SerializeField] GameObject debrisLL;
 	[SerializeField] GameObject debrisLR;
 
-	[SerializeField] GameObject smallMario;
-	[SerializeField] GameObject bigMario;
-	[SerializeField] GameObject fireMario;
-	[SerializeField] GameObject smallStarMario;
-	[SerializeField] GameObject bigStarMario;
-
-	GameObject[] marios = new GameObject[6];
-	GameObject[] marioAnimations = new GameObject[6];
-	GameObject[] marioWalkAnimations = new GameObject[6];
-
-	[SerializeField] GameObject smallMarioAnimation;
-	[SerializeField] GameObject bigMarioAnimation;
-	[SerializeField] GameObject fireMarioAnimation;
-	[SerializeField] GameObject smallMarioWalkAnimation;
-	[SerializeField] GameObject bigMarioWalkAnimation;
-	[SerializeField] GameObject fireMarioWalkAnimation;
-
-
-	GameObject currentMarioAnimation;
-	GameObject currentMarioWalkAnimation;
-
 	SpriteRenderer spriteRenderer;
 	Rigidbody2D player;
 	Animator animator;
@@ -38,34 +17,15 @@ public class PlayerCollisionController : MonoBehaviour {
 	bool visitedExit;
 
 
-
 	void Start()
 	{
 		spriteRenderer = GetComponent<SpriteRenderer>();
 		player = GetComponent<Rigidbody2D>();
 		animator = GetComponentInParent<Animator>();
-
-		marios[0] = smallMario;
-		marios[1] = bigMario;
-		marios[2] = fireMario;
-		marios[3] = smallStarMario;
-		marios[4] = bigStarMario;
-		marios[5] = bigStarMario;
-
-		marioAnimations[0] = smallMarioAnimation;
-		marioAnimations[1] = bigMarioAnimation;
-		marioAnimations[2] = fireMarioAnimation;
-
-		marioWalkAnimations[0] = smallMarioWalkAnimation;
-		marioWalkAnimations[1] = bigMarioWalkAnimation;
-		marioWalkAnimations[2] = fireMarioWalkAnimation;
-
-		SetCurrentMario();
 	}
 
 	void Update()
 	{
-		Debug.Log(GameController.instance.PlayerState);
 		if(!spriteRenderer.enabled)
 		{
 			player.constraints = RigidbodyConstraints2D.FreezeAll;
@@ -74,45 +34,51 @@ public class PlayerCollisionController : MonoBehaviour {
 		{
 			player.velocity = new Vector2(0, -0.9f);
 		}
+		if(MarioSpawner.Instance.InStarMode)
+		{
+			MarioSpawner.Instance.StarTimer += Time.deltaTime;
+			if(MarioSpawner.Instance.StarTimer >= 10)
+			{
+				StartCoroutine(TransformMario(0f, GameController.instance.TempState));
+				MarioSpawner.Instance.InStarMode = false;
+				AudioManager.instance.Stop("Invincibility");
+				AudioManager.instance.Play(GameController.instance.Music);
+			}
+		}
 	}
 
 	void OnCollisionEnter2D(Collision2D other)
 	{
-		// Debug.Log("COLLISION = " + other.gameObject.tag);
 		if(!GameController.instance.Dead)
 		{
-		// Debug.Log(GameController.instance.PlayerState);
-		// Debug.Log("COLLISION " + other.gameObject.tag);
-			if(transform.position.y <= other.transform.position.y -0.08)
+			if(other.gameObject.tag == "BrickBottom")
 			{
-				if(other.gameObject.tag == "BrickBottom")
+				if(GameController.instance.PlayerState >= 1 && GameController.instance.PlayerState != 3)
 				{
-					if(GameController.instance.PlayerState >= 1 && GameController.instance.PlayerState != 3)
-					{
-						Destroy(Instantiate(debrisUL, other.transform.parent.position + new Vector3(-0.04f, 0.04f, 0), Quaternion.identity, other.transform), 1f);
-						Destroy(Instantiate(debrisUR, other.transform.parent.position + new Vector3(0.04f, 0.04f, 0), Quaternion.identity, other.transform), 1f);
-						Destroy(Instantiate(debrisLL, other.transform.parent.position + new Vector3(-0.04f, -0.04f, 0), Quaternion.identity, other.transform), 1f);
-						Destroy(Instantiate(debrisLR, other.transform.parent.position + new Vector3(0.04f, -0.04f, 0), Quaternion.identity, other.transform), 1f);
-						AudioManager.instance.Play("BreakBlock");
-					}
-				}
-				if(other.gameObject.tag == "CoinBottom")
-				{
-					GameController.instance.Coins ++;
+					Destroy(Instantiate(debrisUL, other.transform.parent.position + new Vector3(-0.04f, 0.04f, 0), Quaternion.identity, other.transform), 1f);
+					Destroy(Instantiate(debrisUR, other.transform.parent.position + new Vector3(0.04f, 0.04f, 0), Quaternion.identity, other.transform), 1f);
+					Destroy(Instantiate(debrisLL, other.transform.parent.position + new Vector3(-0.04f, -0.04f, 0), Quaternion.identity, other.transform), 1f);
+					Destroy(Instantiate(debrisLR, other.transform.parent.position + new Vector3(0.04f, -0.04f, 0), Quaternion.identity, other.transform), 1f);
+					AudioManager.instance.Play("BreakBlock");
 				}
 			}
+			if(other.gameObject.tag == "CoinBottom")
+			{
+				GameController.instance.Coins ++;
+			}
+		
 			if(other.gameObject.tag == "Mushroom")
 			{
 				animator.SetTrigger("Grow");
-				GameController.instance.Score += 1000;
+				GameController.instance.Score.currentScore += 1000;
 				if(GameController.instance.PlayerState == 3)
 				{
-					Invoke("SmallStarToBigStar", 1f);
-					GameController.instance.TempState ++;
+					StartCoroutine(TransformMario(1f, 4));
+					GameController.instance.TempState = 1;
 				}
 				else
 				{
-					Invoke("SmallToBig", 1f);
+					StartCoroutine(TransformMario(1f, 1));
 				}
 				AudioManager.instance.Play("PowerUp");
 			}
@@ -123,30 +89,30 @@ public class PlayerCollisionController : MonoBehaviour {
 			}
 			if(other.gameObject.tag == "Star")
 			{
-				GameController.instance.TempState = GetCurrentState();
+				GameController.instance.TempState = GameController.instance.PlayerState;
+				MarioSpawner.Instance.InStarMode = true;
+				AudioManager.instance.Stop(GameController.instance.Music);
+				AudioManager.instance.Play("Invincibility");
 				if(GameController.instance.PlayerState < 1)
 				{
-					TransformMario(3);
+					StartCoroutine(TransformMario(0f, 3));
 				}
 				else if(GameController.instance.PlayerState == 1)
 				{
-					TransformMario(4);
+					StartCoroutine(TransformMario(0f, 4));
 				}
 				else if(GameController.instance.PlayerState == 2)
 				{
-					TransformMario(5);
+					StartCoroutine(TransformMario(0f, 5));
 				}
-				AudioManager.instance.Stop(GameController.instance.Music);
-				AudioManager.instance.Play("Invincibility");
-				Invoke("TurnBackToNormal", 10f);
 			}
 		}
-			if(other.gameObject.tag == "Goal")
-			{
-				animator.SetTrigger("Goal");
-				Invoke("Goal", 0.2f);
-				AudioManager.instance.Stop("FlapPole");
-			}
+
+		if(other.gameObject.tag == "Goal")
+		{
+			animator.SetTrigger("Goal");
+			Invoke("Goal", 0.2f);
+		}
 	}
 
 	void OnTriggerStay2D(Collider2D other)
@@ -157,9 +123,7 @@ public class PlayerCollisionController : MonoBehaviour {
 			{
 				if(!visited) // prevent multiple instantiations
 				{	
-					SetCurrentMario(); // WHY DO I HAVE TO DO THIS
-					// Debug.Log(currentMarioAnimation);
-					Instantiate(currentMarioAnimation, transform.position, Quaternion.identity, transform);
+					MarioSpawner.Instance.PlayAnimation("pipe");
 					AudioManager.instance.Stop(GameController.instance.Music);
 					AudioManager.instance.Play("Pipe");
 				}
@@ -175,7 +139,7 @@ public class PlayerCollisionController : MonoBehaviour {
 				GameController.instance.Exit = true;
 				if(!visitedExit)
 				{
-					Instantiate(currentMarioAnimation, transform.position, Quaternion.identity, transform);
+					MarioSpawner.Instance.PlayAnimation("pipe");
 					AudioManager.instance.Stop(GameController.instance.UndergroundMusic);
 					AudioManager.instance.Play("Pipe");
 				}
@@ -194,14 +158,16 @@ public class PlayerCollisionController : MonoBehaviour {
 			{
 				if(GameController.instance.PlayerState < 2)
 				{
-					TransformMario(2);
+					animator.SetTrigger("Grow");
+					StartCoroutine(TransformMario(1f, 2));
+					
 					AudioManager.instance.Play("PowerUp");
 				}
 				else if(GameController.instance.PlayerState >= 3)
 				{
 					GameController.instance.TempState = 2;
 				}
-				GameController.instance.Score += 1000;
+				GameController.instance.Score.currentScore += 1000;
 			}
 			if(other.gameObject.tag == "Coin")
 			{
@@ -209,11 +175,15 @@ public class PlayerCollisionController : MonoBehaviour {
 				GameController.instance.Coins ++;
 				Destroy(other.gameObject);
 			}
-			// Debug.Log(GameController.instance.PlayerState);
 			if(GameController.instance.PlayerState > 0 && GameController.instance.PlayerState < 3)
 			{
-				ShrinkMario(other, "GoombaSide");
-				ShrinkMario(other, "KoopaSide");
+				if(other.gameObject.tag == "GoombaSide" || other.gameObject.tag == "KoopaSide")
+				{
+					GameController.instance.Transition = true;
+					animator.SetTrigger("Hit");
+					StartCoroutine(TransformMario(1f, GameController.instance.PlayerState - 1));
+					AudioManager.instance.Play("Pipe");
+				}
 			}
 		}
 		if(other.gameObject.tag == "Pole")
@@ -253,85 +223,13 @@ public class PlayerCollisionController : MonoBehaviour {
 		AudioManager.instance.Play(GameController.instance.Music);
 	}
 
-	public void DeTransform()
+	IEnumerator TransformMario(float time ,int state)
 	{
 		GameController.instance.Transition = true;
-		if(bigMario.activeSelf)
-		{
-			animator.SetTrigger("Hit");
-			Invoke("BigToSmall", 1f);
-		}
-		if(fireMario.activeSelf)
-		{
-			animator.SetTrigger("Hit");
-			Invoke("FireToBig", 1f);
-		}
-		AudioManager.instance.Play("Pipe");
-	}
-
-	void SmallToBig()
-	{
-		TransformMario(1);
-	}
-
-	void SmallStarToBigStar()
-	{
-		TransformMario(4);
-		// Debug.Log(GameController.instance.PlayerState);
-	}
-
-	void BigToSmall()
-	{
-		bigMario.SetActive(false);
-		smallMario.SetActive(true);
-		SetCurrentMario();
+		yield return new WaitForSeconds(time);
+		MarioSpawner.Instance.TransformMario(state);
 		GameController.instance.Transition = false;
-		smallMario.transform.position = bigMario.transform.position;
 	}
-
-	void FireToBig()
-	{
-		fireMario.SetActive(false);
-		bigMario.SetActive(true);
-		SetCurrentMario();
-		GameController.instance.Transition = false;
-		bigMario.transform.position = fireMario.transform.position;
-	}
-
-	void ShrinkMario(Collider2D other, string enemy)
-	{
-		if(other.gameObject.tag == enemy)
-		{
-			DeTransform();
-		}
-	}
-
-	void TransformMario(int state)
-	{
-		Vector3 tempPos = GameController.instance.CurrentMario.transform.position;
-		GameController.instance.CurrentMario.SetActive(false);
-		GameController.instance.PlayerState = state;
-		SetCurrentMario();
-		GameController.instance.CurrentMario.SetActive(true);
-		GameController.instance.CurrentMario.transform.position = tempPos;
-	}
-
-	void SetCurrentMario()
-	{
-		GameController.instance.CurrentMario = marios[GetCurrentState()];
-		currentMarioAnimation = marioAnimations[GetCurrentState()];
-		currentMarioWalkAnimation = marioWalkAnimations[GetCurrentState()];
-		// Debug.Log(GetCurrentState());
-		// Debug.Log(currentMarioWalkAnimation);
-		// Debug.Log(currentMarioAnimation);
-		spriteRenderer.flipX = !GameController.instance.FacingRight;
-	}
-
-	int GetCurrentState()
-	{
-		return GameController.instance.PlayerState;
-	}
-
 	void Goal()
 	{
 		transform.position = new Vector2(14.9f, -0.6f);
@@ -342,7 +240,7 @@ public class PlayerCollisionController : MonoBehaviour {
 	void WalkToCastle()
 	{
 		spriteRenderer.enabled = false;
-		Instantiate(currentMarioWalkAnimation, transform.position, Quaternion.identity, transform);
+		MarioSpawner.Instance.PlayAnimation("castle");
 		Invoke("InCastle", 2f);
 		AudioManager.instance.Play("StageClear");
 	}
@@ -350,12 +248,5 @@ public class PlayerCollisionController : MonoBehaviour {
 	void InCastle()
 	{
 		GameController.instance.InCastle = true;
-	}
-
-	void TurnBackToNormal()
-	{
-		TransformMario(GameController.instance.TempState);
-		AudioManager.instance.Stop("Invincibility");
-		AudioManager.instance.Play(GameController.instance.Music);
 	}
 }

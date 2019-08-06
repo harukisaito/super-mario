@@ -9,6 +9,8 @@ public class HoleController : MonoBehaviour {
 		if(other.gameObject.tag == "Player")
 		{
 			GameController.instance.PlayerState = -1;
+			GameController.instance.Dead = true;
+			MarioSpawner.Instance.InStarMode = false;
 		}
 	}
 }

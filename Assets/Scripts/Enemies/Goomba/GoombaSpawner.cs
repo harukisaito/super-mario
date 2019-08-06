@@ -7,6 +7,8 @@ public class GoombaSpawner : MonoBehaviour {
 	[SerializeField] GameObject goombaPrefab;
 
 	void Start () {
+		GameController.instance.Goombas.Clear();
+
 		GameController.instance.Goombas.Add(Instantiate(goombaPrefab, new Vector3(-13.4f, -0.8f), Quaternion.identity));
 		GameController.instance.Goombas.Add(Instantiate(goombaPrefab, new Vector3(-10f, -0.8f), Quaternion.identity));
 		GameController.instance.Goombas.Add(Instantiate(goombaPrefab, new Vector3(-8.5f, -0.8f), Quaternion.identity));
@@ -43,7 +45,6 @@ public class GoombaSpawner : MonoBehaviour {
 		{
 			if(GameController.instance.CurrentMario.transform.position.x > GameController.instance.Goombas[i].transform.position.x -3)
 			{
-				// Debug.Log("ACTIVATE GOOMBA");
 				GameController.instance.Goombas[i].SetActive(true);
 			}
 		}

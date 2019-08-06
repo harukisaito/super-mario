@@ -30,8 +30,14 @@ public class KoopaSideController : MonoBehaviour {
 		{
 			if(other.gameObject.tag == "Player")
 			{
-				GameController.instance.PlayerState --;
+				GameController.instance.Transition = true;
+				Invoke("Damage", 0.01f);
 			}
 		}
+	}
+
+	void Damage()
+	{
+		GameController.instance.PlayerState --;
 	}
 }

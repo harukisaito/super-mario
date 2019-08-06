@@ -31,8 +31,14 @@ public class PlayerController : MonoBehaviour {
 		spriteRenderer.flipX = !GameController.instance.FacingRight;
 		player.constraints = RigidbodyConstraints2D.FreezeRotation;
 	}
+
+	void OnBecameVisible()
+	{
+		player.constraints = RigidbodyConstraints2D.FreezeRotation;
+		spriteRenderer.flipX = !GameController.instance.FacingRight;
+		GameController.instance.Dead = false;
+	}
 	
-	// Update is called once per frame
 	void FixedUpdate () {
 		if(!GameController.instance.Paused)
 		{
@@ -45,7 +51,6 @@ public class PlayerController : MonoBehaviour {
 					colliderP.sharedMaterial.friction = 0.0f;
 					player.sharedMaterial.friction = 0.0f;
 					float tempSpeed = speed;
-					
 					moveX = Input.GetAxis("Horizontal");
 					animator.SetFloat("Speed", Math.Abs(moveX));
 					animator.SetBool("Ground", grounded);
@@ -78,9 +83,10 @@ public class PlayerController : MonoBehaviour {
 	{
 		if(!GameController.instance.Paused)
 		{
+
 			if((GameController.instance.PlayerState == -1 || GameController.instance.Timer < 0) && !visited)
 			{
-				AudioManager.instance.Stop(GameController.instance.Music);
+				AudioManager.instance.StopAllCurrentSounds();
 				AudioManager.instance.Play("MarioDie");
 				GameController.instance.Dead = true;
 				player.constraints = RigidbodyConstraints2D.FreezeAll;
@@ -89,7 +95,7 @@ public class PlayerController : MonoBehaviour {
 				Instantiate(marioDie, transform.position, Quaternion.identity, transform);
 				visited = true;
 			}
-			if(Input.GetKeyDown(KeyCode.Space) && grounded == true)
+			if(Input.GetKeyDown(KeyCode.Space) && grounded == true && !GameController.instance.Dead)
 			{
 				player.AddForce(new Vector2(0f, jumpForce));
 				if(GameController.instance.PlayerState == 0)
@@ -113,11 +119,15 @@ public class PlayerController : MonoBehaviour {
 			// 	animator.SetBool("Duck", duck);
 			// }
 			
-			if(GameController.instance.PlayerState != 0)
+			if(GameController.instance.PlayerState > 0 && GameController.instance.PlayerState != 3)
 			{
 				duck = Input.GetKey(KeyCode.DownArrow);
 				animator.SetBool("Duck", duck);
 			}
+		}
+		if(player.velocity.x > 0)
+		{
+			Invoke("DisableControlsText", 0.5f);
 		}
 	}
 
@@ -125,5 +135,10 @@ public class PlayerController : MonoBehaviour {
 	{
 		GameController.instance.FacingRight = !GameController.instance.FacingRight;
 		spriteRenderer.flipX = !GameController.instance.FacingRight;
+	}
+
+	void DisableControlsText()
+	{
+		GameController.instance.DisableControlsText();
 	}
 }

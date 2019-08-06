@@ -4,30 +4,28 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using UnityEngine.SceneManagement;
+using System.IO;
+// using UnityEditor;
 
 public class GameController : MonoBehaviour {
 
-	[SerializeField] Text scoreText;
-	[SerializeField] Text timeText;
-	[SerializeField] Text coinText;
-	[SerializeField] Text playerLivesText;
-	[SerializeField] Text winnerText;
-	[SerializeField] Text gameOverText;
-
+	[SerializeField] Text scoreText, timeText, coinText, playerLivesText, gameOverText;
 	[SerializeField] Image marioImage;
-
 	[SerializeField] GameObject goalFlag;
+	[SerializeField] Text[] scores;
+	[SerializeField] Text[] scoreLabels;
+	[SerializeField] Text controlsText;
 
 	List<Rigidbody2D> fireBalls = new List<Rigidbody2D>();
 	List<GameObject> goombas = new List<GameObject>();
 
 	GameObject currentMario;
 
+	public Score Score {get; set;}
 
 	int playerLives = 3;
 	int playerState = 0;
 	int coins;
-	int score;
 	int timeAmount = 400;
 	int timer = 6;
 	int tempState;
@@ -36,7 +34,7 @@ public class GameController : MonoBehaviour {
 	float koopaTimer;
 	float timeSpeed = 2.5f;
 
-	bool dead;
+	bool dead = true;
 	bool facingRight = true;
 	bool exit;
 	bool transition;
@@ -46,12 +44,19 @@ public class GameController : MonoBehaviour {
 	bool finish;
 	bool inCastle;
 	bool paused;
+	bool end;
+	bool gameOver;
+	bool muted;
 
 	string music = "Music";
 	string undergroundMusic = "UndergroundMusic";
+	string path;
+	string jsonPath = "Assets/JSON Files";
+	string guid;
+	
 
 
-	public int PlayerState
+	public int PlayerState 
 	{
 		get {return playerState;}
 		set {playerState = value;}
@@ -66,11 +71,6 @@ public class GameController : MonoBehaviour {
 		get {return coins;}
 		set {coins = value;}
 	}
-	public int Score
-	{
-		get {return score;}
-		set {score = value;}
-	}
 	public int Timer
 	{
 		get {return timer;}
@@ -79,16 +79,14 @@ public class GameController : MonoBehaviour {
 	public int TempState
 	{
 		get {return tempState;}
-		set {tempState = value;} 
+		set {tempState = value;}
 	}
-
 
 	public float KoopaTimer
 	{
 		get {return koopaTimer;}
 		set {koopaTimer = value;}
 	}
-
 
 	public bool Dead
 	{
@@ -131,16 +129,15 @@ public class GameController : MonoBehaviour {
 		set {paused = value;}
 	}
 
-
 	public string Music
 	{
 		get {return music;}
-		set {music = value;}  
+		set {music = value;}
 	}
 	public string UndergroundMusic
 	{
 		get {return undergroundMusic;}
-		set {undergroundMusic = value;}  
+		set {undergroundMusic = value;}
 	}
 
 
@@ -168,6 +165,8 @@ public class GameController : MonoBehaviour {
 	{
 		DontDestroyOnLoad(gameObject);
 
+		Screen.SetResolution(800, 700, false, 30);
+
 		if(instance == null)
 		{
 			instance = this;
@@ -179,6 +178,29 @@ public class GameController : MonoBehaviour {
 		marioImage.enabled = false;
 		playerLivesText.enabled = false;
 		gameOverText.enabled = false;
+
+		for(int i = 0; i < scoreLabels.Length; i++)
+		{
+			scoreLabels[i].enabled = false;
+		}
+		for(int i = 0; i < scores.Length; i++)
+		{
+			scores[i].enabled = false;
+		}
+
+		Score = new Score();
+		if(!Directory.Exists(jsonPath))
+		{
+			#if UNITY_EDITOR
+			guid = UnityEditor.AssetDatabase.CreateFolder("Assets", "JSON Files");
+			#endif
+		}
+		else
+		{
+			DeserializeFromJson();
+		}
+
+		Score.currentScore = 0;
 	}
 
 	void Update()
@@ -188,31 +210,32 @@ public class GameController : MonoBehaviour {
 			AudioManager.instance.Play("Pause");
 			if(!paused)
 			{
-				if(underground)
-				{
-					AudioManager.instance.Pause(undergroundMusic);
-				}
-				else
-				{
-					AudioManager.instance.Pause(music);
-				}
+				AudioManager.instance.PauseAllSounds();
 				Time.timeScale = 0f;
 				paused = true;
 			}
 			else
 			{
-				if(underground)
-				{
-					AudioManager.instance.UnPause(undergroundMusic);
-				}
-				else
-				{
-					AudioManager.instance.UnPause(music);
-				}
+				AudioManager.instance.UnPauseAllSounds();
 				Time.timeScale = 1f;
 				paused = false;
 			}
 		}
+
+		if(Input.GetKeyDown(KeyCode.M))
+		{
+			if(!muted)
+			{
+				AudioManager.instance.MuteAllSounds();
+				muted = true;
+			}
+			else
+			{
+				AudioManager.instance.UnMuteAllSounds();
+				muted = false;
+			}
+		}
+
 		if(playerState == -1 && !loaded)
 		{
 			Invoke("LoadGameOverScene", 3f);
@@ -220,21 +243,40 @@ public class GameController : MonoBehaviour {
 			playerLives -= 1;
 		}
 
-		if(timer == 0)
+		if(gameOver)
 		{
 			if(Input.anyKey)
 			{
+				ResetStats();
+				gameOverText.enabled = false;
+				SceneManager.LoadScene(0);
+				AudioManager.instance.Play(music);
+				gameOver = false;
+			}
+		}
+
+		if(timer == 0)
+		{
+			if(Input.anyKey && end)
+			{
 				AudioManager.instance.Play("Music");
 				ResetStats();
-				winnerText.enabled = false;
 				gameOverText.enabled = false;
 				playerLives = 3;
-				score = 0;
+				Score.currentScore = 0;
 				coins = 0;
 				timer = 6;
 				finish = false;
 				inCastle = false;
 				timeSpeed = 2.5f;
+				for(int i = 0; i < scoreLabels.Length; i++)
+				{
+					scoreLabels[i].enabled = false;
+				}
+				for(int i = 0; i < scores.Length; i++)
+				{
+					scores[i].enabled = false;
+				}
 				SceneManager.LoadScene(0);
 			}
 		}
@@ -242,17 +284,29 @@ public class GameController : MonoBehaviour {
 		ShowCoins();
 		ShowTime();
 		TimeController();
-		ShowScore(score.ToString().Length);
+		scoreText.text = ShowCurrentScore(Score.currentScore.ToString().Length, -1);
 	}
 
-	void ShowScore(int digitCount)
+	public void DisableControlsText()
+	{
+		controlsText.enabled = false;
+	}
+
+	string ShowCurrentScore(int digitCount, int index)
 	{
 		int zeroCount = 6 - digitCount;
 		char zero = '0';
 		
 		String zeroes = new String(zero, zeroCount);
 
-		scoreText.text = zeroes + score;
+		if(index == -1)
+		{
+			return (zeroes + Score.currentScore);
+		}
+		else
+		{
+			return (zeroes + Score.scores[index]);
+		}
 	}
 
 	void ShowTime()
@@ -274,8 +328,7 @@ public class GameController : MonoBehaviour {
 			timer = 0;
 			timeText.text = "" + timer;
 			Instantiate(goalFlag, new Vector2(15.76f, 0), Quaternion.identity);
-			winnerText.text = "YOU DID IT! PRESS ANY KEY TO CONTINUE";
-			winnerText.enabled = true;
+			Invoke("ShowScoreBoard", 3f);			
 		}
 	}
 
@@ -295,9 +348,9 @@ public class GameController : MonoBehaviour {
 	{
 		SceneManager.LoadScene(1);
 		Invoke("EnablePlayerLivesLeft", 0.04f);
-		if(playerLives > -1)
+		if(playerLives >= 0)
 		{
-			Invoke("LoadGameScene", 2f);	
+			Invoke("LoadGameScene", 2f);
 		}
 	}
 
@@ -316,18 +369,25 @@ public class GameController : MonoBehaviour {
 		if(playerLives < 0)
 		{
 			gameOverText.enabled = true;
+			AudioManager.instance.StopAllCurrentSounds();
 			AudioManager.instance.Play("GameOver");
 			gameOverText.text = "GAME OVER";
 			playerLives = 3;
-			score = 0;
+			Score.currentScore = 0;
 			coins = 0;
+			Invoke("GameOver", 5f);
 		}
 		else
 		{
 			playerLivesText.enabled = true;
 			marioImage.enabled = true;
-			playerLivesText.text = "x  " + playerLives;
+			playerLivesText.text = "x " + playerLives;
 		}
+	}
+
+	void GameOver()
+	{
+		gameOver = true;
 	}
 
 	void ResetStats()
@@ -347,7 +407,7 @@ public class GameController : MonoBehaviour {
 		timeSpeed = 100;
 		if((timer / 10) > 1)
 		{
-			score += 100;
+			Score.currentScore += 100;
 		}
 	}
 
@@ -375,5 +435,101 @@ public class GameController : MonoBehaviour {
 				}
 			}
 		}
+	}
+
+	void ShowScoreBoard()
+	{
+		StartCoroutine(LoadScene());
+	}
+
+	IEnumerator LoadScene()
+	{
+	 	SetScoreArray();
+		SerializeToJson(); // SERIALIZE THE CURRENT ARRAY
+		yield return SceneManager.LoadSceneAsync(1);
+		SceneManager.SetActiveScene(SceneManager.GetSceneByBuildIndex(1));
+		for(int i = 0; i < scoreLabels.Length; i++)
+		{
+			scoreLabels[i].enabled = true;
+		}
+		for(int i = 0; i < scores.Length; i++)
+		{
+			scores[i].enabled = true;
+		}   
+		// NEW SCENE IS LOADED AND SCORE OBJECT IS NULL
+		LoadScore();
+
+		string yourScore = ShowCurrentScore(Score.currentScore.ToString().Length, -1);
+		scores[4].text = yourScore;
+
+		SerializeToJson();
+
+		yield return new WaitForSeconds(3f);
+		end = true;
+	}
+
+	void LoadScore()
+	{
+		DeserializeFromJson(); // SCORE IS NO LONGER NULL
+		RankScore(); // SCORES ARE IN RIGHT ORDER SMALL TO BIG
+
+		for(int i = 0; i < Score.scores.Length; i++)
+		{
+			int index = Score.scores.Length - 1 - i; // LAST INDEX IN ARRAY TO FIRST
+			scores[i].text = ShowCurrentScore(Score.scores[ // SCORE ARRAY
+				index]
+				.ToString().Length,  // LENGTH OF THE STRING
+				index); // INDEX IN ARRAY
+		}
+	}
+
+	void RankScore()
+	{
+		Array.Sort(Score.scores);
+	}
+
+	void SetScoreArray()
+	{
+		// DESERIALIZE SCORES IN AWAKE SO THAT CURRENT SCORE IS THE ONE DURING PLAY AND NOT THE ONE DESERIALIZED
+
+		if(Score.scores == null || Score.scores.Length == 0) // IF THERE ARE NO SCORES YET INSTANTIATE THE ARRAY
+		{
+			Score.scores = new int[4];
+			Score.scores[0] = Score.currentScore; // AND ADD THE CURRENT SCORE TO THE ARRAY
+		}
+		else
+		{
+			for(int i = 0; i < Score.scores.Length; i++) // IF THERE ALREADY IS AN ARRAY ADD THE CURRENT SCORE IF AN INDEX IS EMPTY
+			{
+				if(Score.scores[i] == 0 || Score.scores[i] < Score.currentScore) // SECOND ARGUMENT WORKS BECAUSE THE ARRAY IS IN ORDER OTHERWISE YOU NEED TO CHECK EVERY ELEMENT FOR ITS SIZE
+				{
+					Score.scores[i] = Score.currentScore;
+					break;
+				}
+			}
+		}
+	}
+
+	void SerializeToJson()
+	{
+		path = Path.Combine(jsonPath, "Scores.json");
+
+		string json = JsonUtility.ToJson(Score, true);
+		using(StreamWriter writer = new StreamWriter(path))
+		{
+			writer.Write(json);
+		}
+	}
+
+	void DeserializeFromJson()
+	{
+		string json;
+
+		path = Path.Combine(jsonPath, "Scores.json");
+		using(StreamReader reader = new StreamReader(path))
+		{
+			json = reader.ReadToEnd();
+		}
+		Score = JsonUtility.FromJson<Score>(json);
 	}
 }

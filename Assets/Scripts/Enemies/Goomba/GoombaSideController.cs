@@ -16,6 +16,8 @@ public class GoombaSideController : MonoBehaviour {
 		colliderSide = GetComponent<Collider2D>();
 
 		goombaController = goombaScript.GetComponent<GoombaController>();
+
+		colliderSide.enabled = true;
 	}
 	
 	void Update () {
@@ -33,9 +35,9 @@ public class GoombaSideController : MonoBehaviour {
 	{
 		if(GameController.instance.PlayerState < 3)
 		{
-			// Debug.Log(other.gameObject.tag);
 			if(other.gameObject.tag == "Player")
 			{
+				GameController.instance.Transition = true;
 				Invoke("Damage", 0.01f);
 			}
 		}

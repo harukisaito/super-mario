@@ -19,7 +19,7 @@ public class ShootFireBall : MonoBehaviour {
 	void Update () {
 		if((GameController.instance.PlayerState == 2 || GameController.instance.PlayerState == 5) && GameController.instance.FireBalls.Count < 2)
 		{
-			if(Input.GetKeyDown(KeyCode.X))
+			if(Input.GetKeyDown(KeyCode.LeftShift))
 			{
 				AudioManager.instance.Play("FireBall");
 				animator.SetTrigger("Throw");

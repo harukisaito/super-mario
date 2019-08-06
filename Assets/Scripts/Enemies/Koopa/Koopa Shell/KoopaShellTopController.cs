@@ -36,13 +36,11 @@ public class KoopaShellTopController : MonoBehaviour {
 
 	void OnCollisionEnter2D(Collision2D other)
 	{
-		if(koopaShellController.moving)
+		if(koopaShellController.moving && !GameController.instance.Transition)
 		{
 			if(other.gameObject.tag == "Player")
 			{
-				// Debug.Log("HIT");
-
-				GameController.instance.Score += 100;
+				GameController.instance.Score.currentScore += 100;
 				Destroy(Instantiate(scorePoints, other.transform.position, Quaternion.identity, transform.parent), 1f);
 				koopaShellParent.velocity = Vector2.zero; // stop the shell
 				koopaShellController.acclerating = false; // stop updating the velocity in the main controller

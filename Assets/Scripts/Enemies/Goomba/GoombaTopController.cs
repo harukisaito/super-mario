@@ -41,15 +41,15 @@ public class GoombaTopController : MonoBehaviour {
 
 	void OnCollisionEnter2D(Collision2D other)
 	{
-		if(other.transform.position.y > transform.position.y + 0.08)
+		if(other.transform.localPosition.y > transform.localPosition.y + 0.08f)
 		{
 			if(other.gameObject.tag == "Player")
 			{
-				AudioManager.instance.Play("Stomp");
 				goombaController.hit = true;
+				AudioManager.instance.Play("Stomp");
 				colliderTop.enabled = false;
 				goomba.constraints = RigidbodyConstraints2D.FreezeAll;
-				GameController.instance.Score += 100;
+				GameController.instance.Score.currentScore += 100;
 				animator.SetTrigger("GoombaSquashed");
 				Invoke("DisableSprite", 0.3f);
 				Destroy(Instantiate(scorePoints, transform.position, Quaternion.identity, transform.parent), 1f);

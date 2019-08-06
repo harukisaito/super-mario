@@ -39,10 +39,23 @@ public class KoopaShellSideController : MonoBehaviour {
 			{
 				if(other.gameObject.tag == "Player")
 				{
+					GameController.instance.Transition = true;
+					if(GameController.instance.PlayerState > 0)
+					{
+						StartCoroutine(TransformMario(GameController.instance.PlayerState - 1));
+						other.gameObject.GetComponent<Animator>().SetTrigger("Hit");
+					}
 					GameController.instance.PlayerState --;
-					other.gameObject.GetComponent<PlayerCollisionController>().DeTransform();
 				}
 			}
 		}
+	}
+
+	IEnumerator TransformMario(int state)
+	{
+		yield return new WaitForSeconds(1f);
+		MarioSpawner.Instance.TransformMario(state);
+
+		GameController.instance.Transition = false;
 	}
 }
